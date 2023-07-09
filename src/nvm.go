@@ -386,7 +386,9 @@ func install(version string, cpuarch string) {
 			tempDir := filepath.Join(env.root, "temp")
 
 			// Extract npm to the temp directory
-			err := file.Unzip(filepath.Join(tempDir, "npm-v"+npmv+".zip"), filepath.Join(tempDir, "nvm-npm"))
+			unzipFolderName, err := file.Unzip(filepath.Join(tempDir, "npm-v"+npmv+".zip"), filepath.Join(tempDir, "nvm-npm"))
+
+			file.Rename(filepath.Join(tempDir, "nvm-npm", unzipFolderName), filepath.Join(tempDir, "nvm-npm", "cli-"+npmv))
 
 			// Copy the npm and npm.cmd files to the installation directory
 			tempNpmBin := filepath.Join(tempDir, "nvm-npm", "cli-"+npmv, "bin")

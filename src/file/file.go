@@ -11,10 +11,12 @@ import (
 )
 
 // Function courtesy http://stackoverflow.com/users/1129149/swtdrgn
-func Unzip(src, dest string) error {
+func Unzip(src, dest string) (string, error) {
+	var folderName string
+	var firstMatch = true
 	r, err := zip.OpenReader(src)
 	if err != nil {
-		return err
+		return folderName, err
 	}
 	defer r.Close()
 
@@ -22,12 +24,22 @@ func Unzip(src, dest string) error {
 		if !strings.Contains(f.Name, "..") {
 			rc, err := f.Open()
 			if err != nil {
-				return err
+				return folderName, err
 			}
 			defer rc.Close()
 
 			fpath := filepath.Join(dest, f.Name)
 			if f.FileInfo().IsDir() {
+				if firstMatch {
+					var fdir string
+					if lastIndex := strings.LastIndex(fpath, string(os.PathSeparator)); lastIndex > -1 {
+						fdir = fpath[lastIndex:]
+						if strings.HasPrefix(fdir, "\\npm-cli-") {
+							folderName = fdir
+							firstMatch = false
+						}
+					}
+				}
 				os.MkdirAll(fpath, f.Mode())
 			} else {
 				var fdir string
@@ -38,17 +50,17 @@ func Unzip(src, dest string) error {
 				err = os.MkdirAll(fdir, f.Mode())
 				if err != nil {
 					log.Fatal(err)
-					return err
+					return folderName, err
 				}
 				f, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 				if err != nil {
-					return err
+					return folderName, err
 				}
 				defer f.Close()
 
 				_, err = io.Copy(f, rc)
 				if err != nil {
-					return err
+					return folderName, err
 				}
 			}
 		} else {
@@ -56,7 +68,7 @@ func Unzip(src, dest string) error {
 		}
 	}
 
-	return nil
+	return folderName, nil
 }
 
 func ReadLines(path string) ([]string, error) {
@@ -77,4 +89,22 @@ func ReadLines(path string) ([]string, error) {
 func Exists(filename string) bool {
 	_, err := os.Stat(filename)
 	return err == nil
+}
+
+func Rename(src, dest string) error {
+	if src == dest {
+		return nil
+	}
+	if Exists(dest) {
+		log.Printf("\nfile %s already exists, please delete\n", dest)
+		return nil
+	}
+
+	err := os.Rename(src, dest)
+	if err != nil {
+		log.Printf("\nfailed to rename file: %s to %s, err=%s\n", src, dest, err)
+		return err
+	}
+	log.Printf("\nsuccess to rename file: %s to %s\n", src, dest)
+	return nil
 }
