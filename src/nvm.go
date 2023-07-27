@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	NvmVersion = "1.1.11"
+	NvmVersion = "1.1.11.1"
 )
 
 type Environment struct {
@@ -1103,12 +1103,8 @@ func help() {
 // BEGIN | Utility functions
 // ===============================================================
 func checkVersionExceedsLatest(version string) bool {
-	//content := web.GetRemoteTextFile("http://nodejs.org/dist/latest/SHASUMS256.txt")
-	url := web.GetFullNodeUrl("latest/SHASUMS256.txt")
-	content := web.GetRemoteTextFile(url)
-	re := regexp.MustCompile("node-v(.+)+msi")
-	reg := regexp.MustCompile("node-v|-[xa].+")
-	latest := reg.ReplaceAllString(re.FindString(content), "")
+	available, _, _, _, _, _ := node.GetAvailable()
+	latest := available[0]
 	var vArr = strings.Split(version, ".")
 	var lArr = strings.Split(latest, ".")
 	for index := range lArr {
